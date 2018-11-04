@@ -9,6 +9,7 @@ Project for computer vision. Use canny edge operator to find the edge in pics. D
 6. Output the threshold T and total number of edges detected in edge image.
 
 Plan:
+
 2018-11-05
 finish the input and the Gaussian part of program.
 
