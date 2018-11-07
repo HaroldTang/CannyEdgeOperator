@@ -20,14 +20,15 @@ class CannyOperation():
         formatData = np.array(dataList)
         #print(formatData)
 
-        gResult = self.gFilter(formatData, i , j)
-        #print(gResult)
-        gradient= self.prewittOp(gResult, i , j)
-        print(gradient)
+        gResult = self.gFilter(formatData, i , j)           #use gaussian filter to convolute the picture
+        # pic = Image.fromarray(gResult)
+        # pic.show()
+        gradient, angle= self.prewittOp(gResult, i , j)            #use prewitt operator to detect the edge
+        print(gradient,"\n",angle)
         pic = Image.fromarray(gradient)
         pic.show()
 
-    # def conv( self, image, i, j , weight, boundary):
+    # def conv( self, image, i, j , weight, boundary):        #use to encapsulate the convolution operation
     #     self.image = image
     #     self.i = i
     #     self.j = j
@@ -45,7 +46,7 @@ class CannyOperation():
         self.list = image
         self.i = i
         self.j = j
-        gaussianFilter = np.array(([ 1, 1, 2, 2, 2, 1, 1 ],
+        gaussianFilter = np.array(([ 1, 1, 2, 2, 2, 1, 1 ],     #define gaussian filter
                                    [ 1, 2, 2, 4, 2, 2, 1 ],
                                    [ 2, 2, 4, 8, 4, 2, 2 ],
                                    [ 2, 4, 8,16, 8, 4, 2 ],
@@ -55,26 +56,27 @@ class CannyOperation():
         # gImage = self.conv(image, i, j, gaussianFilter, 3)
         # normalImage = gImage/140.0
         # return normalImage
-        i_gau = len(image[ 0 ][ : ]) - 3
+        i_gau = len(image[ 0 ][ : ]) - 3                    #get the variant of the loop
         j_gau = len(image[ :, -1 ]) - 3
         #print(j_gau, i_gau)
-        gauImage = np.zeros((i, j), dtype=np.float)
+        gauImage = np.zeros((i, j), dtype=np.float)         #initialize an array contains of zero
         for a in range(3,j_gau):
             for b in range(3,i_gau):
-                gauImage[a,b] = np.sum(image[ a - 3: a + 4, b - 3:b + 4 ] * gaussianFilter) / 140.0
+                gauImage[a,b] = np.sum(image[ a - 3: a + 4, b - 3:b + 4 ] * gaussianFilter) / 140.0         #for each pixel that will be convoluted, use matrix multiplication to get result
         return gauImage
 
     def prewittOp( self, image, i, j):
         self.image = image
         self.i = i
         self.j = j
-        i_pre = len(image[ 0 ][ : ]) - 4
+        i_pre = len(image[ 0 ][ : ]) - 4                    #get the variant of the loop
         j_pre = len(image[ :, -1 ]) - 4
-        prewitt_X = np.array(([ -1, 0, 1 ], [ -1, 0, 1 ], [ -1, 0, 1 ]))
-        prewitt_Y = np.array(([ 1, 1, 1 ], [ 0, 0, 0 ], [ -1, -1, -1 ]))
+        prewitt_X = np.array(([ -1, 0, 1 ], [ -1, 0, 1 ], [ -1, 0, 1 ]))            #define prewitt X operator
+        prewitt_Y = np.array(([ 1, 1, 1 ], [ 0, 0, 0 ], [ -1, -1, -1 ]))            #define prewitt Y operator
         image_X= np.zeros((i, j), dtype=np.float)
         image_Y= np.zeros((i, j), dtype=np.float)
-        image_gradient = np.zeros((i, j), dtype=np.float)
+        image_gradient = np.zeros((i, j), dtype=np.float)                           #create three empty matrix to store the value
+        gradient_angle = np.zeros((i, j), dtype=np.float)
 
         for a in range(4,j_pre):
             for b in range(4,i_pre):
@@ -86,8 +88,9 @@ class CannyOperation():
 
         for m in range(i):
             for n in range(j):
-                image_gradient[m][n] =np.sqrt(np.square(image_X[m][n])+np.square(image_Y[m][n]))
-        return image_gradient
+                image_gradient[m][n] =np.sqrt(np.square(image_X[m][n])+np.square(image_Y[m][n]))        #get the gradient of each image
+                gradient_angle [m][n] = np.arctan2(image_Y[m][n],image_X[m][n])
+        return image_gradient, gradient_angle
 
 Canny = CannyOperation()
 Canny.canny("zebra-crossing-1.bmp")
