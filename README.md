@@ -17,4 +17,7 @@ finish the input and the Gaussian part of program.
 finish prewitt and non-maxima part
 
 2018-11-08
-finish P-tile thresholding and output part.
+finish P-tile thresholding and output part.(Have trouble on same name error)
+
+2018-11-09
+Finished all codes and refactor some code formats.
