@@ -1,12 +1,13 @@
 import math
+import os
 
 import numpy as np
 from PIL import Image
 
 
-# import data from file
 class CannyOperation:
     def __init__( self, string ):
+        self.filename = string
         raw_data = Image.open(string)  # open file and read raw data
 
         i_len = raw_data.size[ 1 ]  # get i
@@ -22,32 +23,45 @@ class CannyOperation:
                 data_list[ x ][ y ] = raw_data.getpixel((y, x))  # input raw data into a double list
 
         self.format_data = np.array(data_list)
+        path = "./output"  # create dictionary for output
+        if not os.path.exists(path):
+            os.mkdir(path)
 
     def canny( self ):
 
         gau_result = self.gau_filter(self.format_data)  # use gaussian filter to convoluted picture
+        out_gau = Image.fromarray(gau_result).convert("L")
+        out_gau.save('./output/gaussian_' + self.filename)
 
-        gradient, angle = self.Prewitt_op(gau_result)  # use Prewitt operator to detect the edge
+        gradient, angle, pic_x, pic_y = self.Prewitt_op(gau_result)  # use Prewitt operator to detect the edge
+        out_gradient = Image.fromarray(gradient).convert("L")
+        out_gradient.save('./output/gradient_' + self.filename)
+
+        out_x = Image.fromarray(pic_x).convert("L")  # output horizontal and vertical image
+        out_x.save('./output/horizontal_' + self.filename)
+        out_y = Image.fromarray(pic_y).convert("L")
+        out_y.save('./output/vertical_' + self.filename)
 
         suppressed_image = self.nm_suppression(gradient, angle)  # use non-maxima suppression
+        out_suppression = Image.fromarray(suppressed_image).convert("L")
+        out_suppression.save('./output/non_maxima_' + self.filename)
 
-        x10, edge_num10, final_image1 = self.p_tile(suppressed_image,
-                                                    0.1)  # use p-tile method to set threshold, for p = 10%
-        x30, edge_num30, final_image3 = self.p_tile(suppressed_image,
-                                                    0.3)  # use p-tile method to set threshold, for p = 30%
-        x50, edge_num50, final_image5 = self.p_tile(suppressed_image,
-                                                    0.5)  # use p-tile method to set threshold, for p = 50%
+        x10, edge_num10, final_image1 = self.p_tile(suppressed_image, 0.1)  # use p-tile method to set threshold
+        x30, edge_num30, final_image3 = self.p_tile(suppressed_image, 0.3)
+        x50, edge_num50, final_image5 = self.p_tile(suppressed_image, 0.5)
 
-        print(x10, edge_num10)  # output result
-        print(x30, edge_num30)
-        print(x50, edge_num50)
+        f = open("./output/finalResult.txt", 'a')  # output result
+        f.write(self.filename + " threshold for 10 percent is %d, total number of edges is %d\n" % (x10, edge_num10))
+        f.write(self.filename + " threshold for 30 percent is %d, total number of edges is %d\n" % (x30, edge_num30))
+        f.write(self.filename + " threshold for 50 percent is %d, total number of edges is %d\n" % (x50, edge_num50))
+        f.close()
 
-        pic1 = Image.fromarray(final_image1)  # test the final image
-        pic3 = Image.fromarray(final_image3)
-        pic5 = Image.fromarray(final_image5)
-        pic1.show()
-        pic3.show()
-        pic5.show()
+        pic1 = Image.fromarray(final_image1).convert("L")  # output the final image
+        pic3 = Image.fromarray(final_image3).convert("L")
+        pic5 = Image.fromarray(final_image5).convert("L")
+        pic1.save('./output/10percent_' + self.filename)
+        pic3.save('./output/30percent_' + self.filename)
+        pic5.save('./output/50percent_' + self.filename)
 
     def conv( self, image, weight, boundary, former ):  # use to encapsulate the convolution operation
 
@@ -69,7 +83,7 @@ class CannyOperation:
                                     [ 2, 2, 4, 8, 4, 2, 2 ],
                                     [ 1, 2, 2, 4, 2, 2, 1 ],
                                     [ 1, 1, 2, 2, 2, 1, 1 ]))
-        gau_image = self.conv(image, gaussian_filter, 3, 0)  # convolute the image with gaussian filter to smooth it
+        gau_image = self.conv(image, gaussian_filter, 3, 0)  # convolution the image with gaussian filter to smooth it
         normal_image = gau_image / 140.0
         return normal_image
 
@@ -77,14 +91,14 @@ class CannyOperation:
 
         Prewitt_x = np.array(([ -1, 0, 1 ],
                               [ -1, 0, 1 ],
-                              [ -1, 0, 1 ]))  # define prewitt X operator
+                              [ -1, 0, 1 ]))  # define prewitt horizontal operator
         Prewitt_y = np.array(([ 1, 1, 1 ],
                               [ 0, 0, 0 ],
-                              [ -1, -1, -1 ]))  # define prewitt Y operator
+                              [ -1, -1, -1 ]))  # define prewitt vertical operator
         image_x = self.conv(image, Prewitt_x, 1, 3)
         image_y = self.conv(image, Prewitt_y, 1, 3)
         image_gradient = np.zeros((self.i_len, self.j_len),
-                                  dtype=np.float)  # create three empty matrix to store the value
+                                  dtype=np.float)  # create two empty matrices to store the value
         gradient_angle = np.zeros((self.i_len, self.j_len), dtype=np.float)
 
         for m in range(self.i_len):
@@ -93,7 +107,7 @@ class CannyOperation:
                     np.square(image_x[ m ][ n ]) + np.square(image_y[ m ][ n ]))  # get the gradient for each pixel
                 gradient_angle[ m ][ n ] = math.degrees(
                     np.arctan2(image_y[ m ][ n ], image_x[ m ][ n ]))  # get gradient angle for each pixel
-        return image_gradient, gradient_angle
+        return image_gradient, gradient_angle, abs(image_x), abs(image_y)
 
     def nm_suppression( self, image, angle ):
 
@@ -123,7 +137,6 @@ class CannyOperation:
 
     def p_tile( self, image, p ):
         threshold = 0
-
         final_image = np.zeros((self.i_len, self.j_len))
 
         threshold_sum = 0
