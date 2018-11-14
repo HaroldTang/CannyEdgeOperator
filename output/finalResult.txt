@@ -1,0 +1,6 @@
+Lena256.bmp threshold for 10 percent is 128, total number of edges is 1281
+Lena256.bmp threshold for 30 percent is 58, total number of edges is 3843
+Lena256.bmp threshold for 50 percent is 24, total number of edges is 6451
+zebra-crossing-1.bmp threshold for 10 percent is 128, total number of edges is 6166
+zebra-crossing-1.bmp threshold for 30 percent is 52, total number of edges is 18535
+zebra-crossing-1.bmp threshold for 50 percent is 20, total number of edges is 30790
